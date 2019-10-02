@@ -23,6 +23,7 @@ type Tokenizer struct {
 	FilePath string
 	Tokens   []*Token
 	Output   *os.File
+	currIdx  int
 }
 
 // NewTokenizer -- create Tokenizer struct
@@ -49,7 +50,33 @@ func NewTokenizer(filePath string) *Tokenizer {
 		panic(err)
 	}
 
-	return &Tokenizer{FilePath: filePath, Tokens: tokens, Output: file}
+	return &Tokenizer{
+		FilePath: filePath,
+		Tokens:   tokens,
+		Output:   file,
+		currIdx:  0,
+	}
+}
+
+// HasMoreToken -- check whether token remains
+func (t *Tokenizer) HasMoreToken() bool {
+	return t.currIdx < len(t.Tokens)
+}
+
+// Advance -- increment CurrIdx
+func (t *Tokenizer) Advance() {
+	if t.currIdx+1 >= len(t.Tokens) {
+		panic("No more token")
+	}
+	t.currIdx++
+}
+
+// GetCurrToken -- get current token
+func (t *Tokenizer) GetCurrToken() *Token {
+	if t.currIdx >= len(t.Tokens) {
+		panic("Out of Index")
+	}
+	return t.Tokens[t.currIdx]
 }
 
 // WriteXML -- write -T.xml file
@@ -79,7 +106,7 @@ func (t *Tokenizer) WriteXML() {
 		case StringConst:
 			value = token.StringVal()
 		default:
-			value = ""
+			value = "undefined token"
 		}
 		fmt.Fprintf(file, "\t<%v>%v</%v>\n", token.Type(), value, token.Type())
 	}

@@ -12,8 +12,8 @@ type Token struct {
 }
 
 // NewToken -- create new token
-func NewToken(word string) *Token {
-	return &Token{Value: word}
+func NewToken(value string) *Token {
+	return &Token{Value: value}
 }
 
 // Type -- return token type
