@@ -1,10 +1,8 @@
 package tokenizer
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"regexp"
 )
 
@@ -18,16 +16,16 @@ const (
 	identifier  = `(?m)([A-Za-z_]\w*)`
 )
 
-// Tokenizer --
-type Tokenizer struct {
+// Base is tokenizer's base struct
+type Base struct {
 	FilePath string
 	Tokens   []*Token
 	Output   *os.File
-	currIdx  int
+	CurrIdx  int
 }
 
-// NewTokenizer -- create Tokenizer struct
-func NewTokenizer(filePath string) *Tokenizer {
+// NewTokenizer -- create Tokenizer base struct
+func NewTokenizer(filePath string) *Base {
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		panic(err)
@@ -43,71 +41,29 @@ func NewTokenizer(filePath string) *Tokenizer {
 		tokens = append(tokens, NewToken(v))
 	}
 
-	// create file
-	filename := regexp.MustCompile(`.jack$`).ReplaceAllString(filepath.Base(filePath), "")
-	file, err := os.Create(filename + "T.xml")
-	if err != nil {
-		panic(err)
-	}
-
-	return &Tokenizer{
+	return &Base{
 		FilePath: filePath,
 		Tokens:   tokens,
-		Output:   file,
-		currIdx:  0,
+		CurrIdx:  0,
 	}
 }
 
-// HasMoreToken -- check whether token remains
-func (t *Tokenizer) HasMoreToken() bool {
-	return t.currIdx < len(t.Tokens)
+// HasMoreTokens -- check whether token remains
+func (base *Base) HasMoreTokens() bool {
+	return base.CurrIdx < len(base.Tokens)
 }
 
 // Advance -- increment CurrIdx
-func (t *Tokenizer) Advance() {
-	if t.currIdx+1 >= len(t.Tokens) {
-		panic("No more token")
+func (base *Base) Advance() {
+	if base.HasMoreTokens() {
+		base.CurrIdx++
 	}
-	t.currIdx++
 }
 
 // GetCurrToken -- get current token
-func (t *Tokenizer) GetCurrToken() *Token {
-	if t.currIdx >= len(t.Tokens) {
+func (base *Base) GetCurrToken() *Token {
+	if base.CurrIdx >= len(base.Tokens) {
 		panic("Out of Index")
 	}
-	return t.Tokens[t.currIdx]
-}
-
-// WriteXML -- write -T.xml file
-func (t *Tokenizer) WriteXML() {
-	file, err := os.OpenFile(t.Output.Name(), os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	// open and close token tag
-	fmt.Fprintln(file, "<tokens>")
-	defer fmt.Fprintln(file, "</tokens>")
-
-	// write each token
-	for _, token := range t.Tokens {
-		var value interface{}
-		switch token.Type() {
-		case Keyword:
-			value = token.KeywordType()
-		case Symbol:
-			value = token.Symbol()
-		case Identifier:
-			value = token.Identifier()
-		case IntConst:
-			value = token.IntVal()
-		case StringConst:
-			value = token.StringVal()
-		default:
-			value = "undefined token"
-		}
-		fmt.Fprintf(file, "\t<%v>%v</%v>\n", token.Type(), value, token.Type())
-	}
+	return base.Tokens[base.CurrIdx]
 }
