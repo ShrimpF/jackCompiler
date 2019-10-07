@@ -18,24 +18,29 @@ func New(t *tokenizer.Base, output *os.File) *Base {
 	return &Base{Tokenizer: t, Output: output}
 }
 
+// GetToken -- get current token. shorten Tokenizer.GetCurrToken()
+func (b *Base) GetToken() *tokenizer.Token {
+	return b.Tokenizer.GetCurrToken()
+}
+
 // write -- general use for write string
-func (base *Base) write(value string) {
-	fmt.Fprintln(base.Output, value)
+func (b *Base) write(value string) {
+	fmt.Fprintln(b.Output, value)
 }
 
 // WriteOpenTag -- write <XXX>
-func (base *Base) WriteOpenTag(value interface{}) {
-	base.write(fmt.Sprintf("<%v>", value))
+func (b *Base) WriteOpenTag(value interface{}) {
+	b.write(fmt.Sprintf("<%v>", value))
 }
 
 // WriteCloseTag -- write </XXX>
-func (base *Base) WriteCloseTag(value interface{}) {
-	base.write(fmt.Sprintf("</%v>", value))
+func (b *Base) WriteCloseTag(value interface{}) {
+	b.write(fmt.Sprintf("</%v>", value))
 }
 
-// WriteTerminal -- write <XXX>value</XXX>
-func (base *Base) WriteTerminal() {
-	token := base.Tokenizer.GetCurrToken()
+// WriteTerminal -- write <XXX>value</XXX>,then advace next token
+func (b *Base) WriteTerminal() {
+	token := b.GetToken()
 	var value interface{}
 
 	switch token.Type() {
@@ -53,29 +58,87 @@ func (base *Base) WriteTerminal() {
 		value = "undefined token"
 	}
 
-	base.write(fmt.Sprintf("\t<%v>%v</%v>", token.Type(), value, token.Type()))
-	base.Tokenizer.Advance()
+	b.write(fmt.Sprintf("\t<%v>%v</%v>", token.Type(), value, token.Type()))
+	b.Tokenizer.Advance()
 }
 
 // CompileClass -- write class xml
-func (base *Base) CompileClass() {
-	base.WriteOpenTag(tokenizer.Class.String())
-	defer base.WriteCloseTag(tokenizer.Class.String())
-	base.Tokenizer.Advance()
+func (b *Base) CompileClass() {
+	b.WriteOpenTag("class")
+	b.WriteTerminal()
 
-	base.WriteTerminal() // write class-name
-	base.WriteTerminal() // write "{"
+	b.WriteTerminal() // write class-name
+	b.WriteTerminal() // write "{"
 
-	//TODO call CompileClassVarDec
-	//TODO call CompileSubroutineDex
+	b.CompileClassVarDec()
+	//TODO call CompileSubroutineDec
 
-	base.WriteTerminal() // write "}"
+	b.WriteTerminal() // write "}"
+	b.WriteCloseTag("class")
 }
 
 // CompileClassVarDec -- write class variables declaration
-func (base *Base) CompileClassVarDec() {
-	keywordType := base.Tokenizer.GetCurrToken().KeywordType()
-	if keywordType != tokenizer.Static && keywordType != tokenizer.Field {
+func (b *Base) CompileClassVarDec() {
+	if !isClassVarDec(b.GetToken()) {
 		return
+	}
+	b.WriteOpenTag("classVarDec")
+	b.WriteTerminal() // "field" or "static"
+	b.WriteTerminal() // type
+	b.WriteTerminal() // variable name
+	for b.GetToken().Symbol() == "," {
+		b.WriteTerminal()
+		b.WriteTerminal()
+	}
+	b.WriteTerminal() // ";"
+	b.WriteCloseTag("classVarDec")
+	b.CompileClassVarDec() // call next classVarDec
+}
+
+// CompileSubroutineDec -- write func method constructot ...etc
+func (b *Base) CompileSubroutineDec() {
+	if !isSubroutineDec(b.GetToken()) {
+		return
+	}
+	b.WriteOpenTag("subroutineDec")
+	b.WriteTerminal() // constructor, function, method
+	b.WriteTerminal() // void , type
+	b.WriteTerminal() // subroutine name
+	b.WriteTerminal() // (
+	b.CompileParameterList()
+	//TODO CompileSubroutineBody
+	b.WriteCloseTag("subroutineDec")
+}
+
+// CompileParameterList -- write parameter list like (int x,int y)
+func (b *Base) CompileParameterList() {
+	if b.GetToken().Symbol() == ")" {
+		return
+	}
+	b.WriteOpenTag("parameterList")
+	b.WriteTerminal() // type
+	b.WriteTerminal() // varName
+	for b.GetToken().Symbol() == "," {
+		b.WriteTerminal() // type
+		b.WriteTerminal() // varName
+	}
+	b.WriteCloseTag("parameterList")
+}
+
+func isClassVarDec(t *tokenizer.Token) bool {
+	switch t.KeywordType() {
+	case tokenizer.Field, tokenizer.Static:
+		return true
+	default:
+		return false
+	}
+}
+
+func isSubroutineDec(t *tokenizer.Token) bool {
+	switch t.KeywordType() {
+	case tokenizer.Constructor, tokenizer.Function, tokenizer.Method:
+		return true
+	default:
+		return false
 	}
 }
