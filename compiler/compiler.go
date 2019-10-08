@@ -71,7 +71,7 @@ func (b *Base) CompileClass() {
 	b.WriteTerminal() // write "{"
 
 	b.CompileClassVarDec()
-	//TODO call CompileSubroutineDec
+	b.CompileSubroutineDec()
 
 	b.WriteTerminal() // write "}"
 	b.WriteCloseTag("class")
@@ -106,7 +106,10 @@ func (b *Base) CompileSubroutineDec() {
 	b.WriteTerminal() // subroutine name
 	b.WriteTerminal() // (
 	b.CompileParameterList()
-	//TODO CompileSubroutineBody
+	b.WriteTerminal() // )
+
+	b.CompileSubroutineBody()
+
 	b.WriteCloseTag("subroutineDec")
 }
 
@@ -119,10 +122,59 @@ func (b *Base) CompileParameterList() {
 	b.WriteTerminal() // type
 	b.WriteTerminal() // varName
 	for b.GetToken().Symbol() == "," {
+		b.WriteTerminal() // ,
 		b.WriteTerminal() // type
 		b.WriteTerminal() // varName
 	}
 	b.WriteCloseTag("parameterList")
+}
+
+// CompileSubroutineBody -- write subroutine body
+func (b *Base) CompileSubroutineBody() {
+	b.WriteOpenTag("subroutineBody")
+	b.WriteTerminal() // {
+
+	b.CompileVarDec()
+	b.CompileStatements()
+
+	b.WriteTerminal() // }
+	b.WriteCloseTag("subroutineBody")
+}
+
+// CompileVarDec -- write variable declearation
+func (b *Base) CompileVarDec() {
+	if b.GetToken().KeywordType() != tokenizer.Var {
+		return
+	}
+	b.WriteOpenTag("varDec")
+	b.WriteTerminal() // var
+	b.WriteTerminal() // type
+	b.WriteTerminal() // var name
+	for b.GetToken().Symbol() == "," {
+		b.WriteTerminal() // ,
+		b.WriteTerminal() // var name
+	}
+	b.WriteCloseTag("varDec")
+	b.CompileVarDec()
+}
+
+// CompileStatements -- write statements like let if while do return
+func (b *Base) CompileStatements() {
+	switch b.GetToken().KeywordType() {
+	case tokenizer.Let:
+		//TODO compile let statements
+	case tokenizer.If:
+		//TODO compile if statements
+	case tokenizer.While:
+		//TODO compile while statements
+	case tokenizer.Do:
+		//TODO compile do statements
+	case tokenizer.Return:
+		//TODO compile return statements
+	default:
+		return
+	}
+	b.CompileStatements()
 }
 
 func isClassVarDec(t *tokenizer.Token) bool {

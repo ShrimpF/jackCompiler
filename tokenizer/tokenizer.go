@@ -33,6 +33,8 @@ func NewTokenizer(filePath string) *Base {
 	}
 	// remove comments
 	bytes = regexp.MustCompile(comment+`|`+emptyLine).ReplaceAll(bytes, []byte{})
+	bytes = regexp.MustCompile(emptyLine).ReplaceAll(bytes, []byte{})
+
 	fmt.Println(string(bytes))
 	// tokenize
 	values := regexp.MustCompile(keyword+`|`+symbol+`|`+intConst+`|`+stringConst+`|`+identifier).FindAllString(string(bytes), -1)

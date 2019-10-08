@@ -10,7 +10,7 @@ import (
 func main() {
 	filePath := os.Args[1]
 	t := tokenizer.NewTokenizer(filePath)
-	file, err := os.Create("main.xml")
+	file, err := os.Create("sample.xml")
 	if err != nil {
 		panic(err)
 	}
