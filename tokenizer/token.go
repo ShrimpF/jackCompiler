@@ -8,26 +8,26 @@ import (
 
 // Token --
 type Token struct {
-	Value string
+	value string
 }
 
 // NewToken -- create new token
 func NewToken(value string) *Token {
-	return &Token{Value: value}
+	return &Token{value: value}
 }
 
 // Type -- return token type
 func (t *Token) Type() TokenType {
 	switch {
-	case regexp.MustCompile(keyword).MatchString(t.Value):
+	case regexp.MustCompile(keyword).MatchString(t.value):
 		return Keyword
-	case regexp.MustCompile(symbol).MatchString(t.Value):
+	case regexp.MustCompile(symbol).MatchString(t.value):
 		return Symbol
-	case regexp.MustCompile(stringConst).MatchString(t.Value):
+	case regexp.MustCompile(stringConst).MatchString(t.value):
 		return StringConst
-	case regexp.MustCompile(identifier).MatchString(t.Value):
+	case regexp.MustCompile(identifier).MatchString(t.value):
 		return Identifier
-	case regexp.MustCompile(intConst).MatchString(t.Value):
+	case regexp.MustCompile(intConst).MatchString(t.value):
 		return IntConst
 	default:
 		return UndefinedToken
@@ -39,7 +39,7 @@ func (t *Token) KeywordType() KeywordType {
 	if t.Type() != Keyword {
 		return UndefinedKeyword
 	}
-	switch t.Value {
+	switch t.value {
 	case "class":
 		return Class
 	case "constructor":
@@ -93,7 +93,7 @@ func (t *Token) Symbol() string {
 		return ""
 	}
 
-	switch t.Value {
+	switch t.value {
 	case "<":
 		return "&lt;"
 	case ">":
@@ -101,7 +101,7 @@ func (t *Token) Symbol() string {
 	case "&":
 		return "&amp;"
 	default:
-		return t.Value
+		return t.value
 	}
 }
 
@@ -110,12 +110,12 @@ func (t *Token) Identifier() string {
 	if t.Type() != Identifier {
 		return ""
 	}
-	return t.Value
+	return t.value
 }
 
 // IntVal return intConst's value
 func (t *Token) IntVal() int {
-	val, err := strconv.Atoi(t.Value)
+	val, err := strconv.Atoi(t.value)
 	if err != nil || t.Type() != IntConst {
 		fmt.Println(err)
 		return -1
@@ -128,5 +128,5 @@ func (t *Token) StringVal() string {
 	if t.Type() != StringConst {
 		return ""
 	}
-	return regexp.MustCompile(`\"`).ReplaceAllString(t.Value, "")
+	return regexp.MustCompile(`\"`).ReplaceAllString(t.value, "")
 }

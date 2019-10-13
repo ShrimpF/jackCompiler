@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ShrimpF/jackCompiler/tokenizer"
+	"github.com/ShrimpF/jackcompiler/tokenizer"
 )
 
 // Base -- main struct
@@ -18,8 +18,13 @@ func New(t *tokenizer.Base, output *os.File) *Base {
 	return &Base{Tokenizer: t, Output: output}
 }
 
-// GetToken -- get current token. shorten Tokenizer.GetCurrToken()
-func (b *Base) GetToken() *tokenizer.Token {
+// Start -- start compiling
+func (b *Base) Start() {
+	b.compileClass()
+}
+
+// getToken -- get current token. shorten Tokenizer.GetCurrToken()
+func (b *Base) getToken() *tokenizer.Token {
 	return b.Tokenizer.GetCurrToken()
 }
 
@@ -28,19 +33,19 @@ func (b *Base) write(value string) {
 	fmt.Fprintln(b.Output, value)
 }
 
-// WriteOpenTag -- write <XXX>
-func (b *Base) WriteOpenTag(value interface{}) {
+// writeOpenTag -- write <XXX>
+func (b *Base) writeOpenTag(value interface{}) {
 	b.write(fmt.Sprintf("<%v>", value))
 }
 
-// WriteCloseTag -- write </XXX>
-func (b *Base) WriteCloseTag(value interface{}) {
+// writeCloseTag -- write </XXX>
+func (b *Base) writeCloseTag(value interface{}) {
 	b.write(fmt.Sprintf("</%v>", value))
 }
 
-// WriteTerminal -- write <XXX>value</XXX>,then advace next token
-func (b *Base) WriteTerminal() {
-	token := b.GetToken()
+// writeTerminal -- write <XXX>value</XXX>,then advace next token
+func (b *Base) writeTerminal() {
+	token := b.getToken()
 	var value interface{}
 
 	switch token.Type() {
@@ -62,267 +67,266 @@ func (b *Base) WriteTerminal() {
 	b.Tokenizer.Advance()
 }
 
-// CompileClass -- write class xml
-func (b *Base) CompileClass() {
-	b.WriteOpenTag("class")
-	b.WriteTerminal()
+// compileClass -- write class xml
+func (b *Base) compileClass() {
+	b.writeOpenTag("class")
+	b.writeTerminal()
 
-	b.WriteTerminal() // write class-name
-	b.WriteTerminal() // write "{"
+	b.writeTerminal() // write class-name
+	b.writeTerminal() // write "{"
 
-	b.CompileClassVarDec()
-	b.CompileSubroutineDec()
+	b.compileClassVarDec()
+	b.compileSubroutineDec()
 
-	b.WriteTerminal() // write "}"
-	b.WriteCloseTag("class")
+	b.writeTerminal() // write "}"
+	b.writeCloseTag("class")
 }
 
-// CompileClassVarDec -- write class variables declaration
-func (b *Base) CompileClassVarDec() {
-	if !isClassVarDec(b.GetToken()) {
+// compileClassVarDec -- write class variables declaration
+func (b *Base) compileClassVarDec() {
+	if !isClassVarDec(b.getToken()) {
 		return
 	}
-	b.WriteOpenTag("classVarDec")
-	b.WriteTerminal() // "field" or "static"
-	b.WriteTerminal() // type
-	b.WriteTerminal() // variable name
-	for b.GetToken().Symbol() == "," {
-		b.WriteTerminal()
-		b.WriteTerminal()
+	b.writeOpenTag("classVarDec")
+	b.writeTerminal() // "field" or "static"
+	b.writeTerminal() // type
+	b.writeTerminal() // variable name
+	for b.getToken().Symbol() == "," {
+		b.writeTerminal()
+		b.writeTerminal()
 	}
-	b.WriteTerminal() // ";"
-	b.WriteCloseTag("classVarDec")
-	b.CompileClassVarDec() // call next classVarDec
+	b.writeTerminal() // ";"
+	b.writeCloseTag("classVarDec")
+	b.compileClassVarDec() // call next classVarDec
 }
 
-// CompileSubroutineDec -- write func method constructot ...etc
-func (b *Base) CompileSubroutineDec() {
-	if !isSubroutineDec(b.GetToken()) {
+// compileSubroutineDec -- write func method constructot ...etc
+func (b *Base) compileSubroutineDec() {
+	if !isSubroutineDec(b.getToken()) {
 		return
 	}
-	b.WriteOpenTag("subroutineDec")
-	b.WriteTerminal() // constructor, function, method
-	b.WriteTerminal() // void , type
-	b.WriteTerminal() // subroutine name
-	b.WriteTerminal() // (
-	b.CompileParameterList()
-	b.WriteTerminal() // )
-	b.CompileSubroutineBody()
-	b.WriteCloseTag("subroutineDec")
-	b.CompileSubroutineDec()
+	b.writeOpenTag("subroutineDec")
+	b.writeTerminal() // constructor, function, method
+	b.writeTerminal() // void , type
+	b.writeTerminal() // subroutine name
+	b.writeTerminal() // (
+	b.compileParameterList()
+	b.writeTerminal() // )
+	b.compileSubroutineBody()
+	b.writeCloseTag("subroutineDec")
+	b.compileSubroutineDec()
 }
 
-// CompileParameterList -- write parameter list like (int x,int y)
-func (b *Base) CompileParameterList() {
-	b.WriteOpenTag("parameterList")
-	if b.GetToken().Symbol() != ")" {
-		b.WriteTerminal() // type
-		b.WriteTerminal() // varName
-		for b.GetToken().Symbol() == "," {
-			b.WriteTerminal() // ,
-			b.WriteTerminal() // type
-			b.WriteTerminal() // varName
+// compileParameterList -- write parameter list like (int x,int y)
+func (b *Base) compileParameterList() {
+	b.writeOpenTag("parameterList")
+	if b.getToken().Symbol() != ")" {
+		b.writeTerminal() // type
+		b.writeTerminal() // varName
+		for b.getToken().Symbol() == "," {
+			b.writeTerminal() // ,
+			b.writeTerminal() // type
+			b.writeTerminal() // varName
 		}
 	}
-	b.WriteCloseTag("parameterList")
+	b.writeCloseTag("parameterList")
 }
 
-// CompileSubroutineBody -- write subroutine body
-func (b *Base) CompileSubroutineBody() {
-	b.WriteOpenTag("subroutineBody")
-	b.WriteTerminal() // {
+// compileSubroutineBody -- write subroutine body
+func (b *Base) compileSubroutineBody() {
+	b.writeOpenTag("subroutineBody")
+	b.writeTerminal() // {
 
-	b.CompileVarDec()
-	b.CompileStatements()
+	b.compileVarDec()
+	b.compileStatements()
 
-	b.WriteTerminal() // }
-	b.WriteCloseTag("subroutineBody")
+	b.writeTerminal() // }
+	b.writeCloseTag("subroutineBody")
 }
 
-// CompileVarDec -- write variable declearation
-func (b *Base) CompileVarDec() {
-	if b.GetToken().KeywordType() != tokenizer.Var {
+// compileVarDec -- write variable declearation
+func (b *Base) compileVarDec() {
+	if b.getToken().KeywordType() != tokenizer.Var {
 		return
 	}
-	b.WriteOpenTag("varDec")
-	b.WriteTerminal() // var
-	b.WriteTerminal() // type
-	b.WriteTerminal() // var name
-	for b.GetToken().Symbol() == "," {
-		b.WriteTerminal() // ,
-		b.WriteTerminal() // var name
+	b.writeOpenTag("varDec")
+	b.writeTerminal() // var
+	b.writeTerminal() // type
+	b.writeTerminal() // var name
+	for b.getToken().Symbol() == "," {
+		b.writeTerminal() // ,
+		b.writeTerminal() // var name
 	}
-	b.WriteCloseTag("varDec")
-	b.CompileVarDec()
+	b.writeTerminal() // ;
+	b.writeCloseTag("varDec")
+	b.compileVarDec()
 }
 
-// CompileStatements -- write statements like let if while do return
-func (b *Base) CompileStatements() {
-	b.WriteOpenTag("statements")
-
+// compileStatements -- write statements like let if while do return
+func (b *Base) compileStatements() {
+	b.writeOpenTag("statements")
 STATEMENTS_LOOP:
 	for {
-		switch b.GetToken().KeywordType() {
+		switch b.getToken().KeywordType() {
 		case tokenizer.Let:
-			b.CompileLet()
+			b.compileLet()
 		case tokenizer.If:
-			b.CompileIf()
+			b.compileIf()
 		case tokenizer.While:
-			b.CompileWhile()
+			b.compileWhile()
 		case tokenizer.Do:
-			b.CompileDo()
+			b.compileDo()
 		case tokenizer.Return:
-			b.CompileReturn()
+			b.compileReturn()
 		default:
 			break STATEMENTS_LOOP
 		}
 	}
-
-	b.WriteCloseTag("statements")
+	b.writeCloseTag("statements")
 }
 
-// CompileLet -- write let statements
-func (b *Base) CompileLet() {
-	b.WriteOpenTag("letStatement")
-	b.WriteTerminal() // let
-	b.WriteTerminal() // varName
-	if b.GetToken().Symbol() == "[" {
-		b.WriteTerminal() // [
-		b.CompileExpression()
-		b.WriteTerminal() // ]
+// compileLet -- write let statements
+func (b *Base) compileLet() {
+	b.writeOpenTag("letStatement")
+	b.writeTerminal() // let
+	b.writeTerminal() // varName
+	if b.getToken().Symbol() == "[" {
+		b.writeTerminal() // [
+		b.compileExpression()
+		b.writeTerminal() // ]
 	}
-	b.WriteTerminal() // =
-	b.CompileExpression()
-	b.WriteTerminal() // ;
-	b.WriteCloseTag("letStatement")
+	b.writeTerminal() // =
+	b.compileExpression()
+	b.writeTerminal() // ;
+	b.writeCloseTag("letStatement")
 }
 
-// CompileIf -- write if statements
-func (b *Base) CompileIf() {
-	b.WriteOpenTag("ifStatement")
-	b.WriteTerminal() // if
-	b.WriteTerminal() // (
-	b.CompileExpression()
-	b.WriteTerminal() // )
-	b.WriteTerminal() // {
-	b.CompileStatements()
-	b.WriteTerminal() // }
-	if b.GetToken().KeywordType() == tokenizer.Else {
-		b.WriteTerminal() // else
-		b.WriteTerminal() // {
-		b.CompileStatements()
-		b.WriteTerminal() // }
+// compileIf -- write if statements
+func (b *Base) compileIf() {
+	b.writeOpenTag("ifStatement")
+	b.writeTerminal() // if
+	b.writeTerminal() // (
+	b.compileExpression()
+	b.writeTerminal() // )
+	b.writeTerminal() // {
+	b.compileStatements()
+	b.writeTerminal() // }
+	if b.getToken().KeywordType() == tokenizer.Else {
+		b.writeTerminal() // else
+		b.writeTerminal() // {
+		b.compileStatements()
+		b.writeTerminal() // }
 	}
-	b.WriteCloseTag("ifStatement")
+	b.writeCloseTag("ifStatement")
 }
 
-// CompileWhile -- write while statements
-func (b *Base) CompileWhile() {
-	b.WriteOpenTag("whileStatement")
-	b.WriteTerminal() // while
-	b.WriteTerminal() // (
-	b.CompileExpression()
-	b.WriteTerminal() // )
-	b.WriteTerminal() // {
-	b.CompileStatements()
-	b.WriteTerminal() // }
-	b.WriteCloseTag("whileStatement")
+// compileWhile -- write while statements
+func (b *Base) compileWhile() {
+	b.writeOpenTag("whileStatement")
+	b.writeTerminal() // while
+	b.writeTerminal() // (
+	b.compileExpression()
+	b.writeTerminal() // )
+	b.writeTerminal() // {
+	b.compileStatements()
+	b.writeTerminal() // }
+	b.writeCloseTag("whileStatement")
 }
 
-// CompileDo -- write do statementes
-func (b *Base) CompileDo() {
-	b.WriteOpenTag("doStatement")
-	b.WriteTerminal() // do
-	b.WriteTerminal() // subroutine name, class name , var name
-	switch b.GetToken().Symbol() {
+// compileDo -- write do statementes
+func (b *Base) compileDo() {
+	b.writeOpenTag("doStatement")
+	b.writeTerminal() // do
+	b.writeTerminal() // subroutine name, class name , var name
+	switch b.getToken().Symbol() {
 	case "(":
-		b.WriteTerminal() // (
-		b.CompileExpressionList()
-		b.WriteTerminal() // )
+		b.writeTerminal() // (
+		b.compileExpressionList()
+		b.writeTerminal() // )
 	case ".":
-		b.WriteTerminal() // .
-		b.WriteTerminal() // subroutine name
-		b.WriteTerminal() // (
-		b.CompileExpressionList()
-		b.WriteTerminal() // )
+		b.writeTerminal() // .
+		b.writeTerminal() // subroutine name
+		b.writeTerminal() // (
+		b.compileExpressionList()
+		b.writeTerminal() // )
 	}
-	b.WriteTerminal() // ;
-	b.WriteCloseTag("doStatement")
+	b.writeTerminal() // ;
+	b.writeCloseTag("doStatement")
 }
 
-// CompileReturn -- write return statements
-func (b *Base) CompileReturn() {
-	b.WriteOpenTag("returnStatement")
-	b.WriteTerminal() // return
-	if b.GetToken().Symbol() != ";" {
-		b.CompileExpression()
+// compileReturn -- write return statements
+func (b *Base) compileReturn() {
+	b.writeOpenTag("returnStatement")
+	b.writeTerminal() // return
+	if b.getToken().Symbol() != ";" {
+		b.compileExpression()
 	}
-	b.WriteTerminal() // ;
-	b.WriteCloseTag("returnStatement")
+	b.writeTerminal() // ;
+	b.writeCloseTag("returnStatement")
 }
 
-// CompileExpression -- write expressioon
-func (b *Base) CompileExpression() {
-	b.WriteOpenTag("expression")
-	b.CompileTerm()
-	for isOperand(b.GetToken()) {
-		b.WriteTerminal() // write operand
-		b.CompileTerm()
+// compileExpression -- write expressioon
+func (b *Base) compileExpression() {
+	b.writeOpenTag("expression")
+	b.compileTerm()
+	for isOperand(b.getToken()) {
+		b.writeTerminal() // write operand
+		b.compileTerm()
 	}
-	b.WriteCloseTag("expression")
+	b.writeCloseTag("expression")
 }
 
-// CompileTerm -- write term
-func (b *Base) CompileTerm() {
-	b.WriteOpenTag("term")
-	defer b.WriteCloseTag("term")
+// compileTerm -- write term
+func (b *Base) compileTerm() {
+	b.writeOpenTag("term")
+	defer b.writeCloseTag("term")
 
-	switch b.GetToken().Symbol() {
+	switch b.getToken().Symbol() {
 	case "-", "~":
-		b.WriteTerminal() // - or ~
-		b.CompileTerm()
+		b.writeTerminal() // - or ~
+		b.compileTerm()
 		return
 	case "(":
-		b.WriteTerminal() // (
-		b.CompileExpression()
-		b.WriteTerminal() // )
+		b.writeTerminal() // (
+		b.compileExpression()
+		b.writeTerminal() // )
 		return
 	default:
-		b.WriteTerminal()
+		b.writeTerminal()
 	}
 
-	switch b.GetToken().Symbol() {
+	switch b.getToken().Symbol() {
 	case "[":
-		b.WriteTerminal() // [
-		b.CompileExpression()
-		b.WriteTerminal() // ]
+		b.writeTerminal() // [
+		b.compileExpression()
+		b.writeTerminal() // ]
 		return
 	// subroutine call
 	case "(":
-		b.WriteTerminal() // (
-		b.CompileExpressionList()
-		b.WriteTerminal() // )
+		b.writeTerminal() // (
+		b.compileExpressionList()
+		b.writeTerminal() // )
 	case ".":
-		b.WriteTerminal() // .
-		b.WriteTerminal() // subrourine name
-		b.WriteTerminal() // (
-		b.CompileExpressionList()
-		b.WriteTerminal() // )
+		b.writeTerminal() // .
+		b.writeTerminal() // subrourine name
+		b.writeTerminal() // (
+		b.compileExpressionList()
+		b.writeTerminal() // )
 	}
 
 }
 
-// CompileExpressionList -- compile a bunch of expressions
-func (b *Base) CompileExpressionList() {
-	b.WriteOpenTag("expressionList")
-	if b.GetToken().Symbol() != ")" {
-		b.CompileExpression()
-		for b.GetToken().Symbol() == "," {
-			b.WriteTerminal()
-			b.CompileExpression()
+// compileExpressionList -- compile a bunch of expressions
+func (b *Base) compileExpressionList() {
+	b.writeOpenTag("expressionList")
+	if b.getToken().Symbol() != ")" {
+		b.compileExpression()
+		for b.getToken().Symbol() == "," {
+			b.writeTerminal()
+			b.compileExpression()
 		}
 	}
-	b.WriteCloseTag("expressionList")
+	b.writeCloseTag("expressionList")
 }
 
 func isClassVarDec(t *tokenizer.Token) bool {

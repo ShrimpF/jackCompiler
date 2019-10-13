@@ -1,19 +1,12 @@
 package main
 
 import (
-	"os"
+	"flag"
 
-	"github.com/ShrimpF/jackCompiler/compiler"
-	"github.com/ShrimpF/jackCompiler/tokenizer"
+	"github.com/ShrimpF/jackCompiler/analyzer"
 )
 
 func main() {
-	filePath := os.Args[1]
-	t := tokenizer.NewTokenizer(filePath)
-	file, err := os.Create("sample.xml")
-	if err != nil {
-		panic(err)
-	}
-	compiler := compiler.New(t, file)
-	compiler.CompileClass()
+	flag.Parse()
+	analyzer.Analyze(flag.Arg(0))
 }

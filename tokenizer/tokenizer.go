@@ -1,14 +1,13 @@
 package tokenizer
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
 )
 
 const (
-	comment     = `(?m)(\/\/.*)|(?m)(\/\*.*\*\/)`
+	comment     = `(?m)(\/\/.*)|(?s)(\/\*.*?\*\/)`
 	emptyLine   = `(?m)(^\n)`
 	keyword     = `(?m)(^class$|^constructor$|^function$|^method$|^field$|^static$|^var$|^int$|^char$|^boolean$|^void$|^true$|^false$|^null$|^this$|^let$|^do$|^if$|^else$|^while$|^return$)`
 	symbol      = `(?m)([{}()[\].,;+\-*/&|<>=~])`
@@ -35,7 +34,6 @@ func NewTokenizer(filePath string) *Base {
 	bytes = regexp.MustCompile(comment+`|`+emptyLine).ReplaceAll(bytes, []byte{})
 	bytes = regexp.MustCompile(emptyLine).ReplaceAll(bytes, []byte{})
 
-	fmt.Println(string(bytes))
 	// tokenize
 	values := regexp.MustCompile(keyword+`|`+symbol+`|`+intConst+`|`+stringConst+`|`+identifier).FindAllString(string(bytes), -1)
 
