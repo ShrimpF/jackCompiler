@@ -2,10 +2,10 @@ package symboltable
 
 // enum for kind
 const (
-	static   = "STATIC"
-	field    = "FIELD"
-	argument = "ARG"
-	variable = "VAR"
+	static   = "static"
+	field    = "field"
+	argument = "arg"
+	variable = "var"
 )
 
 type symbol struct {
@@ -29,7 +29,11 @@ func New() *SymbolTable {
 		argument: 0,
 		variable: 0,
 	}
-	return &SymbolTable{count: count}
+	return &SymbolTable{
+		classTable: make(map[string]*symbol),
+		subTable:   make(map[string]*symbol),
+		count:      count,
+	}
 }
 
 // StartSubroutine -- reset subtable map and arg/var count

@@ -16,16 +16,16 @@ const (
 	identifier  = `(?m)([A-Za-z_]\w*)`
 )
 
-// Base is tokenizer's base struct
-type Base struct {
+// Tokenizer is tokenizer's base struct
+type Tokenizer struct {
 	FilePath string
 	Tokens   []*Token
 	Output   *os.File
 	CurrIdx  int
 }
 
-// NewTokenizer -- create Tokenizer base struct
-func NewTokenizer(filePath string) *Base {
+// New -- create Tokenizer base struct
+func New(filePath string) *Tokenizer {
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		panic(err)
@@ -43,7 +43,7 @@ func NewTokenizer(filePath string) *Base {
 		tokens = append(tokens, NewToken(v))
 	}
 
-	return &Base{
+	return &Tokenizer{
 		FilePath: filePath,
 		Tokens:   tokens,
 		CurrIdx:  0,
@@ -51,21 +51,21 @@ func NewTokenizer(filePath string) *Base {
 }
 
 // HasMoreTokens -- check whether token remains
-func (base *Base) HasMoreTokens() bool {
-	return base.CurrIdx < len(base.Tokens)
+func (t *Tokenizer) HasMoreTokens() bool {
+	return t.CurrIdx < len(t.Tokens)
 }
 
 // Advance -- increment CurrIdx
-func (base *Base) Advance() {
-	if base.HasMoreTokens() {
-		base.CurrIdx++
+func (t *Tokenizer) Advance() {
+	if t.HasMoreTokens() {
+		t.CurrIdx++
 	}
 }
 
 // GetCurrToken -- get current token
-func (base *Base) GetCurrToken() *Token {
-	if base.CurrIdx >= len(base.Tokens) {
+func (t *Tokenizer) GetCurrToken() *Token {
+	if t.CurrIdx >= len(t.Tokens) {
 		panic("Out of Index")
 	}
-	return base.Tokens[base.CurrIdx]
+	return t.Tokens[t.CurrIdx]
 }
